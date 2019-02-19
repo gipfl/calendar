@@ -30,6 +30,7 @@ class CalendarMonthSummary extends Table
 
     protected $days = [];
 
+    /** @var Calendar|null */
     protected $calendar;
 
     protected $showWeekNumbers = true;
@@ -46,7 +47,6 @@ class CalendarMonthSummary extends Table
 
     public function __construct($year, $month)
     {
-        $this->calendar = new Calendar();
         $this->year = $year;
         $this->month = $month;
         $this->strMonth = sprintf('%d-%02d', $year, $month);
@@ -58,6 +58,22 @@ class CalendarMonthSummary extends Table
         $this->color = sprintf('%d, %d, %d', $red, $green, $blue);
 
         return $this;
+    }
+
+    public function setCalendar(Calendar $calendar)
+    {
+        $this->calendar = $calendar;
+
+        return $this;
+    }
+
+    public function getCalendar()
+    {
+        if ($this->calendar === null) {
+            $this->calendar = new Calendar();
+        }
+
+        return $this->calendar;
     }
 
     public function addEvents($events, Url $baseUrl)
@@ -150,11 +166,16 @@ class CalendarMonthSummary extends Table
     {
         $this->setCaption($this->getTitle());
         $this->getHeader()->add($this->createWeekdayHeader());
-        $calendar = new Calendar();
+        $calendar = $this->getCalendar();
         foreach ($calendar->getWeeksForMonth($this->getMonthAsTimestamp()) as $cw => $week) {
             $weekRow = $this->weekRow($cw);
-            foreach ($week as $day) {
-                $weekRow->add($this->createDay($day));
+            foreach ($week as $wDay => $day) {
+                $dayElement = $this->createDay($day);
+                $otherMonth = $this->dayIsInThisMonth($day);
+                if ($wDay < 1 || $wDay > 5) {
+                    $dayElement->addAttributes(['class' => 'weekend']);
+                }
+                $weekRow->add($dayElement);
             }
             $this->add($weekRow);
         }
@@ -227,11 +248,27 @@ class CalendarMonthSummary extends Table
 
     protected function createWeekdayHeader()
     {
-        $cols = $this->calendar->listShortWeekDayNames();
+        $calendar = $this->getCalendar();
+        $cols = $calendar->listShortWeekDayNames();
+        $row = Table::tr();
         if ($this->showWeekNumbers) {
-            array_unshift($cols, '');
+            $row->add(Table::th(''));
+        }
+        if ($calendar->firstOfWeekIsMonday()) {
+            $weekend = [6 => true, 7 => true];
+        } else {
+            $weekend = [1 => true, 7 => true];
+        }
+        $wDay = 0;
+        foreach ($cols as $day) {
+            $wDay++;
+            $col = Table::th($day);
+            if (isset($weekend[$wDay])) {
+                $col->addAttributes(['class' => 'weekend']);
+            }
+            $row->add($col);
         }
 
-        return Table::row($cols, null, 'th');
+        return $row;
     }
 }
