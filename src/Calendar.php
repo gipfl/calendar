@@ -11,10 +11,34 @@ class Calendar
 
     protected $firstOfWeek;
 
+    protected $weekDays = [];
+
+    protected $shortWeekDays = [];
+
     public function __construct($firstOfWeek = self::FIRST_IS_MONDAY)
     {
+        $this->setFirstOfWeek($firstOfWeek);
+    }
+
+    public function firstOfWeekIsMonday()
+    {
+        return $this->firstOfWeek === self::FIRST_IS_MONDAY;
+    }
+
+    public function firstOfWeekIsSunday()
+    {
+        return $this->firstOfWeek === self::FIRST_IS_SUNDAY;
+    }
+
+    public function setFirstOfWeek($firstOfWeek)
+    {
         if ($firstOfWeek === self::FIRST_IS_SUNDAY || $firstOfWeek === self::FIRST_IS_MONDAY) {
-            $this->firstOfWeek = $firstOfWeek;
+            if ($firstOfWeek !== $this->firstOfWeek) {
+                $this->firstOfWeek = $firstOfWeek;
+                $this->prepareWeekDays();
+            }
+
+            return $this;
         } else {
             throw new InvalidArgumentException(
                 "First day of week has to be either 0 or 1, got '$firstOfWeek'"
@@ -22,54 +46,29 @@ class Calendar
         }
     }
 
+    protected function prepareWeekDays()
+    {
+        if ($this->firstOfWeekIsSunday()) {
+            $start = '2019-02-03';
+        } else {
+            $start = '2019-02-04';
+        }
+
+        for ($i = 0; $i < 7; $i++) {
+            $day = strtotime("$start +${i}days");
+            $this->weekDays[] = strftime('%A', $day);
+            $this->shortWeekDays[] = strftime('%a', $day);
+        }
+    }
+
     public function listWeekDayNames()
     {
-        if ($this->firstOfWeek === 0) {
-            return [
-                'Sunday',
-                'Monday',
-                'Tuesday',
-                'Wednesday',
-                'Thursday',
-                'Friday',
-                'Saturday',
-            ];
-        } else {
-            return [
-                'Monday',
-                'Tuesday',
-                'Wednesday',
-                'Thursday',
-                'Friday',
-                'Saturday',
-                'Sunday',
-            ];
-        }
+        return $this->weekDays;
     }
 
     public function listShortWeekDayNames()
     {
-        if ($this->firstOfWeek === 0) {
-            return [
-                'Su',
-                'Mo',
-                'Tu',
-                'We',
-                'Th',
-                'Fr',
-                'Sa',
-            ];
-        } else {
-            return [
-                'Mo',
-                'Tu',
-                'We',
-                'Th',
-                'Fr',
-                'Sa',
-                'Su',
-            ];
-        }
+        return $this->shortWeekDays;
     }
 
     /**
@@ -79,7 +78,7 @@ class Calendar
      */
     protected function getDowFormat()
     {
-        if ($this->firstOfWeek === self::FIRST_IS_MONDAY) {
+        if ($this->firstOfWeekIsMonday()) {
             // N -> 1-7 (Mo-Su)
             return 'N';
         } else {
@@ -142,14 +141,14 @@ class Calendar
      * @param int $firstOfWeek
      * @return string
      */
-    protected function getFirstDayOfWeek($day, $firstOfWeek = null)
+    public function getFirstDayOfWeek($day, $firstOfWeek = null)
     {
         if ($firstOfWeek === null) {
             $firstOfWeek = $this->firstOfWeek;
         }
         $dow = $this->getWeekDay(strtotime($day));
         if ($dow > $firstOfWeek) {
-            $sub = $dow - 1;
+            $sub = $dow - $firstOfWeek;
             return date('Y-m-d', strtotime("$day -${sub}day"));
         } else {
             return $day;
@@ -158,17 +157,36 @@ class Calendar
 
     /**
      * @param string $day
+     * @param int $firstOfWeek
      * @return string
      */
-    protected function getLastDayOfWeek($day)
+    protected function getLastDayOfWeek($day, $firstOfWeek = null)
     {
+        if ($firstOfWeek === null) {
+            $firstOfWeek = $this->firstOfWeek;
+        }
         $dow = $this->getWeekDay(strtotime($day));
-        $lastOfWeek = $this->firstOfWeek + 6;
+        $lastOfWeek = $firstOfWeek + 6;
         if ($dow < $lastOfWeek) {
             $add = $lastOfWeek - $dow;
             return date('Y-m-d', strtotime("$day +${add}day"));
         } else {
             return $day;
+        }
+    }
+
+    public function getWeekOfTheYear($day)
+    {
+        $time = strtotime($day);
+        // 0 = Sunday
+        if ($this->firstOfWeekIsSunday() && $this->getWeekDay($time) === 0) {
+            if (substr($time, 4, 6) === '-12-31') {
+                return (int) date('W', strtotime("$day -1day"));
+            } else {
+                return (int) date('W', strtotime("$day +1day"));
+            }
+        } else {
+            return (int) date('W', $time);
         }
     }
 
@@ -187,7 +205,7 @@ class Calendar
         $formerWeekOfTheYear = 0;
         $weeks = [];
         while ($day <= $end) {
-            $weekOfTheYear = (int) date('W', strtotime($day));
+            $weekOfTheYear = $this->getWeekOfTheYear($day);
             if ($weekOfTheYear !== $formerWeekOfTheYear) {
                 $weeks[$weekOfTheYear] = [];
                 $week = & $weeks[$weekOfTheYear];
@@ -200,19 +218,5 @@ class Calendar
         }
 
         return $weeks;
-    }
-
-    protected function unusedOnlyForTranslation()
-    {
-        // TODO: move elsewhere
-        return [
-            $this->translate('Monday'),
-            $this->translate('Tuesday'),
-            $this->translate('Wednesday'),
-            $this->translate('Thursday'),
-            $this->translate('Friday'),
-            $this->translate('Saturday'),
-            $this->translate('Sunday'),
-        ];
     }
 }
