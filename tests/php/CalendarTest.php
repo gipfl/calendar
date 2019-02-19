@@ -39,6 +39,14 @@ class CalendarTest extends TestCase
         ], $calendar->listWeekDayNames());
     }
 
+    public function testFirstDayOfWeek()
+    {
+        $calendar = new Calendar(Calendar::FIRST_IS_SUNDAY);
+        $this->assertEquals('2019-02-03', $calendar->getFirstDayOfWeek('2019-02-07'));
+        $calendar->setFirstOfWeek(Calendar::FIRST_IS_MONDAY);
+        $this->assertEquals('2019-02-04', $calendar->getFirstDayOfWeek('2019-02-07'));
+    }
+
     public function testLastWeekOfFebruary2020GivesCorrectDays()
     {
         $calendar = new Calendar(Calendar::FIRST_IS_MONDAY);
