@@ -3,6 +3,7 @@
 namespace gipfl\Calendar\Widget;
 
 use gipfl\Calendar\Calendar;
+use gipfl\Format\LocalTimeFormat;
 use gipfl\IcingaWeb2\Link;
 use gipfl\IcingaWeb2\Url;
 use gipfl\Translation\TranslationHelper;
@@ -35,11 +36,14 @@ class CalendarMonth extends BaseHtmlElement
     /** @var HtmlElement */
     protected $days = [];
 
+    protected $timeFormatter;
+
     public function __construct(Calendar $calendar, Url $url, $now)
     {
         $this->now = $now;
         $this->url = $url;
         $this->calendar = $calendar;
+        $this->timeFormatter = new LocalTimeFormat();
     }
 
     protected function dayRow()
@@ -72,7 +76,7 @@ class CalendarMonth extends BaseHtmlElement
             $title = sprintf(
                 '%d %s',
                 $title,
-                date('M', strtotime($day))
+                $this->timeFormatter->getShortMonthName(strtotime($day))
             );
         }
         $li = Html::tag(

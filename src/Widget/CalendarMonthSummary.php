@@ -3,6 +3,7 @@
 namespace gipfl\Calendar\Widget;
 
 use gipfl\Calendar\Calendar;
+use gipfl\Format\LocalTimeFormat;
 use gipfl\IcingaWeb2\Link;
 use gipfl\IcingaWeb2\Url;
 use gipfl\Translation\TranslationHelper;
@@ -45,12 +46,15 @@ class CalendarMonthSummary extends Table
 
     protected $forcedMax;
 
+    protected $timeFormat;
+
     public function __construct($year, $month)
     {
         $this->year = $year;
         $this->month = $month;
         $this->strMonth = sprintf('%d-%02d', $year, $month);
         $this->strToday = date('Y-m-d');
+        $this->timeFormat = new LocalTimeFormat();
     }
 
     public function setBaseColorRgb($red, $green, $blue)
@@ -243,7 +247,8 @@ class CalendarMonthSummary extends Table
 
     protected function getMonthName()
     {
-        return strftime('%B', $this->getMonthAsTimestamp());
+        return $this->timeFormat->getMonthName($this->getMonthAsTimestamp());
+
     }
 
     protected function createWeekdayHeader()

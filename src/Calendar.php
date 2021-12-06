@@ -2,6 +2,7 @@
 
 namespace gipfl\Calendar;
 
+use gipfl\Format\LocalTimeFormat;
 use InvalidArgumentException;
 
 class Calendar
@@ -15,8 +16,11 @@ class Calendar
 
     protected $shortWeekDays = [];
 
+    protected $timeFormat;
+
     public function __construct($firstOfWeek = self::FIRST_IS_MONDAY)
     {
+        $this->timeFormat = new LocalTimeFormat();
         $this->setFirstOfWeek($firstOfWeek);
     }
 
@@ -56,8 +60,8 @@ class Calendar
 
         for ($i = 0; $i < 7; $i++) {
             $day = strtotime("$start +${i}days");
-            $this->weekDays[] = strftime('%A', $day);
-            $this->shortWeekDays[] = strftime('%a', $day);
+            $this->weekDays[] = $this->timeFormat->getWeekdayName($day);
+            $this->shortWeekDays[] = $this->timeFormat->getShortWeekdayName($day);
         }
     }
 
