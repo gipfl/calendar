@@ -59,7 +59,7 @@ class Calendar
         }
 
         for ($i = 0; $i < 7; $i++) {
-            $day = strtotime("$start +${i}days");
+            $day = strtotime("$start +{$i}days");
             $this->weekDays[] = $this->timeFormat->getWeekdayName($day);
             $this->shortWeekDays[] = $this->timeFormat->getShortWeekdayName($day);
         }
@@ -153,7 +153,7 @@ class Calendar
         $dow = $this->getWeekDay(strtotime($day));
         if ($dow > $firstOfWeek) {
             $sub = $dow - $firstOfWeek;
-            return date('Y-m-d', strtotime("$day -${sub}day"));
+            return date('Y-m-d', strtotime("$day -{$sub}day"));
         } else {
             return $day;
         }
@@ -173,7 +173,7 @@ class Calendar
         $lastOfWeek = $firstOfWeek + 6;
         if ($dow < $lastOfWeek) {
             $add = $lastOfWeek - $dow;
-            return date('Y-m-d', strtotime("$day +${add}day"));
+            return static::expressionToDate(static::incDay($day, $add));
         } else {
             return $day;
         }
@@ -185,9 +185,9 @@ class Calendar
         // 0 = Sunday
         if ($this->firstOfWeekIsSunday() && $this->getWeekDay($time) === 0) {
             if (substr($time, 4, 6) === '-12-31') {
-                return (int) date('W', strtotime("$day -1day"));
+                return (int) date('W', strtotime(static::decDay($day)));
             } else {
-                return (int) date('W', strtotime("$day +1day"));
+                return (int) date('W', strtotime(static::incDay($day)));
             }
         } else {
             return (int) date('W', $time);
@@ -222,5 +222,25 @@ class Calendar
         }
 
         return $weeks;
+    }
+
+    protected static function expressionToDate($expression)
+    {
+        return date('Y-m-d', strtotime($expression));
+    }
+
+    /**
+     * @param string $day
+     * @param int $increment days to add
+     * @return string
+     */
+    protected static function incDay($day, $increment = 1)
+    {
+        return sprintf('%s +%dday', $day, $increment);
+    }
+
+    protected static function decDay($day, $decrement = 1)
+    {
+        return sprintf('%s -%dday', $day, $decrement);
     }
 }
