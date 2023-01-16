@@ -15,7 +15,7 @@
   },
   "require": {
     "php": ">=5.4.0",
-    "gipfl/format": "^0.3.0",
+    "gipfl/format": ">=0.3",
     "gipfl/icingaweb2": ">=0.4.0",
     "gipfl/translation": ">=0.1.1"
   },
